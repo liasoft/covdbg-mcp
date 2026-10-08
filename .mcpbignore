@@ -1,0 +1,10 @@
+# Only manifest.json, icon.png and LICENSE belong in the bundle.
+.git/
+.github/
+.covdbg/
+.gitignore
+.mcpbignore
+README.md
+server.json
+glama.json
+*.mcpb

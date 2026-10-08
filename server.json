@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.covdbg/covdbg",
+  "title": "covdbg",
+  "description": "C++ code coverage on Windows for AI agents. Find uncovered code from PDBs, no rebuild.",
+  "version": "1.3.0",
+  "websiteUrl": "https://covdbg.com/docs/integrations/mcp/",
+  "repository": {
+    "url": "https://github.com/liasoft/covdbg-mcp",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/liasoft/covdbg-mcp/main/icon.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/liasoft/covdbg-mcp/releases/download/v1.3.0/covdbg.mcpb",
+      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "COVDBG_PROJECT_TOKEN",
+          "description": "Project token for CI or headless use. Not needed after `covdbg login`.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "COVDBG_OUTPUT",
+          "description": "Fixed default output location for coverage databases.",
+          "isRequired": false,
+          "format": "filepath"
+        }
+      ]
+    }
+  ]
+}

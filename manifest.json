@@ -1,0 +1,118 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.3.schema.json",
+  "manifest_version": "0.3",
+  "name": "covdbg",
+  "display_name": "covdbg",
+  "version": "1.3.0",
+  "description": "C++ code coverage on Windows for AI agents. Run tests, find uncovered code, and add targeted tests. No rebuild required.",
+  "long_description": "covdbg measures C++ code coverage of the Windows x64 binaries you already build, using their PDB debug information. It works like a debugger: it starts your executable, reads the PDB, and places lightweight probes while the program runs, so no instrumented rebuild is needed.\n\nThe built-in MCP server lets a coding agent run coverage, rank files by uncovered lines, read the uncovered source segments with context, add a focused test, and re-run coverage to confirm the gap is closed. Coverage databases can be opened read-only, queried with SQL, and merged.\n\nRequirements: Windows x64, covdbg 1.3.0 or newer installed (https://covdbg.com/download/), a one-time `covdbg login` (or a COVDBG_PROJECT_TOKEN for CI), and an executable with PDB symbols.",
+  "author": {
+    "name": "Liasoft",
+    "url": "https://covdbg.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/liasoft/covdbg-mcp"
+  },
+  "homepage": "https://covdbg.com",
+  "documentation": "https://covdbg.com/docs/integrations/mcp/",
+  "support": "https://github.com/liasoft/covdbg-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "binary",
+    "entry_point": "covdbg.exe",
+    "mcp_config": {
+      "command": "${user_config.covdbg_path}",
+      "args": ["mcp", "--workspace", "${user_config.workspace}"],
+      "env": {
+        "COVDBG_PROJECT_TOKEN": "${user_config.project_token}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "guide",
+      "description": "Workflow and configuration guidance (topics: config, excludes, baseline, merging, uncovered, children)."
+    },
+    {
+      "name": "discover",
+      "description": "Find executables and coverage databases in the workspace."
+    },
+    {
+      "name": "run",
+      "description": "Start a coverage run of a target executable; returns a run session immediately."
+    },
+    {
+      "name": "wait_run",
+      "description": "Wait briefly for a run or collect its completed result."
+    },
+    {
+      "name": "cancel_run",
+      "description": "Terminate a coverage run."
+    },
+    {
+      "name": "open_coverage",
+      "description": "Open an existing .covdb coverage database read-only."
+    },
+    {
+      "name": "files",
+      "description": "Rank source files by uncovered lines."
+    },
+    {
+      "name": "code",
+      "description": "Read uncovered source segments of a file with surrounding context."
+    },
+    {
+      "name": "query",
+      "description": "Run one read-only SQL statement against a coverage database."
+    },
+    {
+      "name": "merge",
+      "description": "Combine multiple coverage databases into one."
+    },
+    {
+      "name": "close",
+      "description": "Release a run or coverage session."
+    }
+  ],
+  "tools_generated": false,
+  "keywords": [
+    "coverage",
+    "code-coverage",
+    "c++",
+    "cpp",
+    "windows",
+    "pdb",
+    "msvc",
+    "testing"
+  ],
+  "license": "Apache-2.0",
+  "privacy_policies": [
+    "https://covdbg.com/docs/reference/data-and-telemetry/"
+  ],
+  "compatibility": {
+    "platforms": ["win32"]
+  },
+  "user_config": {
+    "covdbg_path": {
+      "type": "file",
+      "title": "covdbg executable",
+      "description": "Path to covdbg.exe (version 1.3.0 or newer). The default matches the MSI installer location.",
+      "default": "${HOME}\\AppData\\Local\\Programs\\Liasoft\\covdbg\\covdbg.exe",
+      "required": true
+    },
+    "workspace": {
+      "type": "directory",
+      "title": "Workspace",
+      "description": "Project directory that covdbg searches for executables, .covdbg.yaml configuration, and coverage databases.",
+      "required": true
+    },
+    "project_token": {
+      "type": "string",
+      "title": "Project token (optional)",
+      "description": "COVDBG_PROJECT_TOKEN for CI or headless use. Leave empty when you have signed in with `covdbg login`.",
+      "sensitive": true,
+      "required": false
+    }
+  }
+}
