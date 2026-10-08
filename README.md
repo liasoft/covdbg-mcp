@@ -23,7 +23,7 @@ This repository holds the MCP registry metadata (`server.json`, `glama.json`) an
 - Windows x64
 - covdbg **1.3.0 or newer**
 - An executable with PDB debug symbols (MSVC or any PDB-producing toolchain)
-- A one-time `covdbg login`, or `COVDBG_PROJECT_TOKEN` for CI
+- A one-time `covdbg login` (covdbg 1.4 and newer sign in to one team, and runs need a seat in that team), or `COVDBG_PROJECT_TOKEN` for CI
 - A `.covdbg.yaml` next to the target executable, or a `config_path` passed to `run` (see the [configuration reference](https://covdbg.com/docs/reference/configuration/))
 
 ## Install covdbg
@@ -37,6 +37,8 @@ Then open a new terminal and sign in:
 covdbg --version
 covdbg login
 ```
+
+Sign-in is team-scoped: in the browser you choose one team (your personal team, or a team you own or hold a seat in), and the agent's runs are licensed for that team. Use `covdbg login --team <slug>` to choose it up front, and `covdbg whoami` to see which team is active. In CI, `COVDBG_PROJECT_TOKEN` decides by the token's team.
 
 ## Client setup
 
@@ -101,7 +103,7 @@ Or add a project `.mcp.json`:
 3. Set the following:
    - **covdbg executable:** the path to `covdbg.exe`. The default is the MSI install location.
    - **Workspace:** your project directory.
-   - **Project token:** optional. Leave it empty if you have run `covdbg login`.
+   - **Project token:** optional. Leave it empty if you have run `covdbg login`; runs are then licensed for the team you signed in to (see `covdbg whoami`).
 
 The bundle does not contain covdbg itself. It launches your installed `covdbg.exe`, so covdbg updates take effect without a new bundle.
 
@@ -133,7 +135,7 @@ The bundle does not contain covdbg itself. It launches your installed `covdbg.ex
 
 | Variable | Purpose |
 | --- | --- |
-| `COVDBG_PROJECT_TOKEN` | Project token for CI or headless use. Local use relies on `covdbg login`. |
+| `COVDBG_PROJECT_TOKEN` | Project token for CI or headless use. Local use relies on `covdbg login`, which is bound to one team. |
 | `COVDBG_OUTPUT` | Fixed default output location. Avoid reusing one location across a suite, since later runs overwrite earlier results. |
 
 ## Documentation
