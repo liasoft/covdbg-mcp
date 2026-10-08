@@ -20,7 +20,7 @@
     {
       "registryType": "mcpb",
       "identifier": "https://github.com/liasoft/covdbg-mcp/releases/download/v1.3.0/covdbg.mcpb",
-      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "fileSha256": "55a618359392d9532d3095c50c70f140085ea56d122f917a70841f42fff6c4cb",
       "transport": {
         "type": "stdio"
       },
