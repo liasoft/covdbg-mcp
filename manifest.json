@@ -3,7 +3,7 @@
   "manifest_version": "0.3",
   "name": "covdbg",
   "display_name": "covdbg",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "C++ code coverage on Windows for AI agents. Run tests, find uncovered code, and add targeted tests. No rebuild required.",
   "long_description": "covdbg measures C++ code coverage of the Windows x64 binaries you already build, using their PDB debug information. It works like a debugger: it starts your executable, reads the PDB, and places lightweight probes while the program runs, so no instrumented rebuild is needed.\n\nThe built-in MCP server lets a coding agent run coverage, rank files by uncovered lines, read the uncovered source segments with context, add a focused test, and re-run coverage to confirm the gap is closed. Coverage databases can be opened read-only, queried with SQL, and merged.\n\nRequirements: Windows x64, covdbg 1.3.0 or newer installed (https://covdbg.com/download/), a one-time `covdbg login` (or a COVDBG_PROJECT_TOKEN for CI), and an executable with PDB symbols.",
   "author": {
