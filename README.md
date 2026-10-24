@@ -6,7 +6,7 @@
 
 MCP server for [covdbg](https://covdbg.com/): C++ code coverage on Windows for AI agents. Run tests, find uncovered code, and add targeted tests. No rebuild required.
 
-covdbg measures coverage of the Windows x64 binaries you already build, using their PDB debug information. It works like a debugger: it starts your executable, reads the PDB, and places lightweight probes while the program runs. The MCP server is built into the `covdbg` executable (since v1.3.0) and is started with `covdbg mcp`.
+covdbg measures coverage of the Windows binaries you already build, using their PDB debug information: x64, ARM64 and 32-bit x86. It works like a debugger: it starts your executable, reads the PDB, and places lightweight probes while the program runs. The MCP server is built into the `covdbg` executable (since v1.3.0) and is started with `covdbg mcp`.
 
 This repository holds the MCP registry metadata (`server.json`, `glama.json`) and the [MCP Bundle](https://github.com/modelcontextprotocol/mcpb) manifest (`manifest.json`) for covdbg. The server itself ships with covdbg.
 
@@ -16,20 +16,22 @@ This repository holds the MCP registry metadata (`server.json`, `glama.json`) an
 2. **Rank files** by uncovered lines.
 3. **Read the uncovered code** with surrounding context.
 4. **Add a focused test**, re-run it, and confirm the gap is closed.
-5. **Query and merge** coverage databases (`.covdb`) with read-only SQL.
+5. **Query** coverage databases (`.covdb`) with read-only SQL, and **merge** them, also across checkouts and builds.
 
 ## Requirements
 
-- Windows x64
-- covdbg **1.3.0 or newer**
-- An executable with PDB debug symbols (MSVC or any PDB-producing toolchain)
-- A one-time `covdbg login` (covdbg 1.4 and newer sign in to one team, and runs need a seat in that team), or `COVDBG_PROJECT_TOKEN` for CI
+- Windows x64, or Windows on ARM (ARM64)
+- covdbg **1.3.0 or newer**. This README describes covdbg 1.5.0.
+- An executable with PDB debug symbols (MSVC or any PDB-producing toolchain). The x64 covdbg measures x64 and 32-bit x86 programs; the ARM64 covdbg measures ARM64 programs (covdbg 1.5 and newer).
+- A one-time `covdbg login` (covdbg 1.4 and newer sign in to one team, and runs need a seat in that team), or `COVDBG_PROJECT_TOKEN` for CI. A public repository in GitHub Actions needs neither (covdbg 1.5 and newer, see [Licensing in CI](#licensing-in-ci)).
 - A `.covdbg.yaml` next to the target executable, or a `config_path` passed to `run` (see the [configuration reference](https://covdbg.com/docs/reference/configuration/))
 
 ## Install covdbg
 
-- **Installer (recommended):** [installer.msi](https://covdbg.com/download/latest/installer.msi). It installs to `%LocalAppData%\Programs\Liasoft\covdbg` and adds that directory to your user `PATH`.
-- **Portable:** [portable.zip](https://covdbg.com/download/latest/portable.zip). Extract it anywhere and add the directory to your `PATH` yourself.
+- **Installer (recommended):** [installer.msi](https://covdbg.com/download/latest/installer.msi), or [installer-arm64.msi](https://covdbg.com/download/latest/installer-arm64.msi) for Windows on ARM. It installs to `%LocalAppData%\Programs\Liasoft\covdbg` and adds that directory to your user `PATH`.
+- **Portable:** [portable.zip](https://covdbg.com/download/latest/portable.zip), or [portable-arm64.zip](https://covdbg.com/download/latest/portable-arm64.zip) for Windows on ARM. Extract it anywhere and add the directory to your `PATH` yourself. Keep the agent DLLs next to `covdbg.exe`: covdbg looks for them only there.
+
+There is no separate 32-bit covdbg. The x64 build ships `libcovdbg32.dll`, a 32-bit build of its agent, and measures 32-bit programs with the same `covdbg.exe`.
 
 Then open a new terminal and sign in:
 
@@ -38,11 +40,22 @@ covdbg --version
 covdbg login
 ```
 
-Sign-in is team-scoped: in the browser you choose one team (your personal team, or a team you own or hold a seat in), and the agent's runs are licensed for that team. Use `covdbg login --team <slug>` to choose it up front, and `covdbg whoami` to see which team is active. In CI, `COVDBG_PROJECT_TOKEN` decides by the token's team.
+Sign-in is team-scoped: in the browser you choose one team (your personal team, or a team you own or hold a seat in), and the agent's runs are licensed for that team. Use `covdbg login --team <slug>` to choose it up front, and `covdbg whoami` to see which team is active.
+
+### Licensing in CI
+
+In CI, set `COVDBG_PROJECT_TOKEN` in the server's environment; the run is licensed for the token's team.
+
+A public repository in GitHub Actions needs no project token (covdbg 1.5 and newer). Grant the job `permissions: id-token: write`: without `COVDBG_PROJECT_TOKEN` and without a stored sign-in, covdbg presents the token GitHub issues to the job, which names the repository it runs in. GitHub issues no such token to a pull request from a fork. A private repository still needs a project token, and a project token that is set takes precedence.
 
 ## Client setup
 
 The server uses **stdio** transport. Start it from your project directory, or pass `--workspace <dir>`.
+
+| Option | Environment variable | Default | Purpose |
+| --- | --- | --- | --- |
+| `--workspace <dir>` | | working directory | The project directory; the default root for `discover` |
+| `--query-timeout <ms>` | `COVDBG_MCP_QUERY_TIMEOUT_MS` | 5000 | How long one `query` statement may run, 1 to 600000 ms (covdbg 1.5 and newer). The option wins over the variable. |
 
 ### Claude Code
 
@@ -111,7 +124,7 @@ The bundle does not contain covdbg itself. It launches your installed `covdbg.ex
 
 | Tool | Purpose | Main inputs |
 | --- | --- | --- |
-| `guide` | Workflow and configuration guidance | optional `topic` (`config`, `excludes`, `baseline`, `merging`, `uncovered`, `children`) |
+| `guide` | Workflow and configuration guidance. Call it before the first run. | optional `topic` (`workflow`, `config`, `excludes`, `baseline`, `merging`, `uncovered`, `children`, `libraries`) |
 | `discover` | Find executables and coverage databases | optional `root` |
 | `run` | Start a coverage run; returns a run session right away | `target`; optional `target_arguments`, `config_path`, `output_path`, `follow_children` |
 | `wait_run` | Wait briefly or collect the completed result | `session_id`; optional `timeout_seconds` |
@@ -119,17 +132,25 @@ The bundle does not contain covdbg itself. It launches your installed `covdbg.ex
 | `open_coverage` | Open an existing database read-only | `path` |
 | `files` | Rank files by uncovered lines | `session_id`; optional `limit`, `max_coverage_percent` |
 | `code` | Read uncovered source segments with context | `session_id`, `file_path` |
-| `query` | Run one read-only SQL statement | `session_id`, `sql`; optional `max_rows` |
-| `merge` | Combine databases | `input_paths`, `output_path` |
+| `query` | Run one read-only SQL statement, within a time limit | `session_id`, `sql`; optional `max_rows` |
+| `merge` | Combine databases, also from different checkouts and builds | `input_paths`, `output_path` |
 | `close` | Release a run or coverage session | `session_id` |
 
 ### Limits and behavior
 
 - Run session IDs start with `run-`; coverage session IDs start with `covdb-`.
-- At most 8 runs in flight and 32 open coverage sessions.
+- At most 8 runs in flight and 32 open coverage sessions. A run counts while its covdbg process is alive; once `wait_run` has seen it finish, it no longer takes a slot.
 - `wait_run` blocks for at most 30 seconds. If it reports `stillRunning`, call it again.
 - Run outcomes are `success`, `no_functions_to_track`, `license_failure`, or `error`.
 - covdbg's exit code does not carry the target's exit code, so check test results separately.
+- `follow_children` measures the processes the target starts. A launcher without debug information of its own, such as `ctest.exe` or `cmd.exe`, runs unmeasured and covdbg measures its children, so `run` with target `ctest.exe`, `target_arguments` `--test-dir build` and `follow_children` measures the test binaries CTest runs. Every process of one binary adds its hits to one database (covdbg 1.5 and newer).
+- `query` stops a statement still running at the time limit, 5000 ms unless `--query-timeout` says otherwise, and answers with an error; the session stays open. It also bounds a statement's size: at most 100 KiB of SQL, expressions nested 250 deep, 100 `SELECT`s in one compound, `LIKE`/`GLOB` patterns of 1000 bytes, and 16 MiB for any one string or blob (covdbg 1.5 and newer).
+- `merge` matches source files recorded in different checkouts by their path relative to each run's `source_root`, and keeps different builds at one module path, such as the x64 and ARM64 builds of a test, side by side (covdbg 1.5 and newer). `remappedModules` and `remappedFiles` say how many it matched that way.
+- covdbg 1.5.0 writes coverage databases with schema 8 and refuses `.covdb` files written by earlier versions. Record that coverage again.
+
+### Upgrading while the server runs
+
+From covdbg 1.5.0, the installer can upgrade or uninstall covdbg while a client holds `covdbg mcp` open, without a reboot. The running server keeps answering from the old version, and the runs it starts use the newly installed `covdbg.exe`. Reconnect the server to get the new version of the server itself: in Claude Code, `/mcp` → covdbg → Reconnect.
 
 ## Environment variables
 
@@ -137,6 +158,7 @@ The bundle does not contain covdbg itself. It launches your installed `covdbg.ex
 | --- | --- |
 | `COVDBG_PROJECT_TOKEN` | Project token for CI or headless use. Local use relies on `covdbg login`, which is bound to one team. |
 | `COVDBG_OUTPUT` | Fixed default output location. Avoid reusing one location across a suite, since later runs overwrite earlier results. |
+| `COVDBG_MCP_QUERY_TIMEOUT_MS` | Time limit for one `query` statement, 1 to 600000 ms (default 5000). A value outside that range is ignored. `--query-timeout` wins when both are given. |
 
 ## Documentation
 
