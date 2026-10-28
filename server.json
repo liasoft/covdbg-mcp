@@ -3,7 +3,7 @@
   "name": "com.covdbg/covdbg",
   "title": "covdbg",
   "description": "C++ code coverage on Windows for AI agents. Find uncovered code from PDBs, no rebuild.",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "websiteUrl": "https://covdbg.com/docs/integrations/mcp/",
   "repository": {
     "url": "https://github.com/liasoft/covdbg-mcp",
@@ -19,8 +19,8 @@
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/liasoft/covdbg-mcp/releases/download/v1.5.0/covdbg.mcpb",
-      "fileSha256": "763f5b898e088fa8aa8ba23b81c8d18cbd3713453fbd5473ad18339ff3d5e8f4",
+      "identifier": "https://github.com/liasoft/covdbg-mcp/releases/download/v1.5.1/covdbg.mcpb",
+      "fileSha256": "ed0d81b826242784d69ca336357fe140a0e95b47eccf55fd2c47bd277b4daab4",
       "transport": {
         "type": "stdio"
       },
