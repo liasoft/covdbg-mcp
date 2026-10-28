@@ -21,7 +21,7 @@ This repository holds the MCP registry metadata (`server.json`, `glama.json`) an
 ## Requirements
 
 - Windows x64, or Windows on ARM (ARM64)
-- covdbg **1.3.0 or newer**. This README describes covdbg 1.5.0.
+- covdbg **1.3.0 or newer**. This README describes covdbg 1.5.1.
 - An executable with PDB debug symbols (MSVC or any PDB-producing toolchain). The x64 covdbg measures x64 and 32-bit x86 programs; the ARM64 covdbg measures ARM64 programs (covdbg 1.5 and newer).
 - A one-time `covdbg login` (covdbg 1.4 and newer sign in to one team, and runs need a seat in that team), or `COVDBG_PROJECT_TOKEN` for CI. A public repository in GitHub Actions needs neither (covdbg 1.5 and newer, see [Licensing in CI](#licensing-in-ci)).
 - A `.covdbg.yaml` next to the target executable, or a `config_path` passed to `run` (see the [configuration reference](https://covdbg.com/docs/reference/configuration/))
@@ -128,7 +128,7 @@ The bundle does not contain covdbg itself. It launches your installed `covdbg.ex
 | `discover` | Find executables and coverage databases | optional `root` |
 | `run` | Start a coverage run; returns a run session right away | `target`; optional `target_arguments`, `config_path`, `output_path`, `follow_children` |
 | `wait_run` | Wait briefly or collect the completed result | `session_id`; optional `timeout_seconds` |
-| `cancel_run` | Terminate a run | `session_id` |
+| `cancel_run` | End a run: covdbg, the target and every process they started | `session_id` |
 | `open_coverage` | Open an existing database read-only | `path` |
 | `files` | Rank files by uncovered lines | `session_id`; optional `limit`, `max_coverage_percent` |
 | `code` | Read uncovered source segments with context | `session_id`, `file_path` |
@@ -141,12 +141,14 @@ The bundle does not contain covdbg itself. It launches your installed `covdbg.ex
 - Run session IDs start with `run-`; coverage session IDs start with `covdb-`.
 - At most 8 runs in flight and 32 open coverage sessions. A run counts while its covdbg process is alive; once `wait_run` has seen it finish, it no longer takes a slot.
 - `wait_run` blocks for at most 30 seconds. If it reports `stillRunning`, call it again.
-- Run outcomes are `success`, `no_functions_to_track`, `license_failure`, or `error`.
-- covdbg's exit code does not carry the target's exit code, so check test results separately.
+- Run outcomes are `success`, `nothing_measured`, `license_failure`, or `error`. `nothing_measured` (`no_functions_to_track` before covdbg 1.5.1) means the target ran to its end, but no function passed the coverage filter, so the database covdbg wrote is empty; `outputLines` say why, after "nothing was measured". Before covdbg 1.5.1, the target did not run at all.
+- covdbg's exit code does not carry the target's exit code, so check test results separately. From covdbg 1.5.1, covdbg says in `outputLines`, below the program's output, how the program exited.
+- `cancel_run`, and `close` on a run that is still going, end the run's whole process tree at once: covdbg, the target and every process either of them started (covdbg 1.5.1 and newer; before, a process they started kept running until `close`). A run that cannot be set up that way is not started, and `run` says why.
+- A `.covdbg.yaml` that covdbg refuses, such as a value of the wrong shape (`include: "src/**"` where a list belongs) or an unknown `type:`, ends the run with outcome `error`, and `outputLines` name the key with its line and column. A key covdbg does not know is a warning in `outputLines`, and the run goes on (covdbg 1.5.1 and newer).
 - `follow_children` measures the processes the target starts. A launcher without debug information of its own, such as `ctest.exe` or `cmd.exe`, runs unmeasured and covdbg measures its children, so `run` with target `ctest.exe`, `target_arguments` `--test-dir build` and `follow_children` measures the test binaries CTest runs. Every process of one binary adds its hits to one database (covdbg 1.5 and newer).
 - `query` stops a statement still running at the time limit, 5000 ms unless `--query-timeout` says otherwise, and answers with an error; the session stays open. It also bounds a statement's size: at most 100 KiB of SQL, expressions nested 250 deep, 100 `SELECT`s in one compound, `LIKE`/`GLOB` patterns of 1000 bytes, and 16 MiB for any one string or blob (covdbg 1.5 and newer).
 - `merge` matches source files recorded in different checkouts by their path relative to each run's `source_root`, and keeps different builds at one module path, such as the x64 and ARM64 builds of a test, side by side (covdbg 1.5 and newer). `remappedModules` and `remappedFiles` say how many it matched that way.
-- covdbg 1.5.0 writes coverage databases with schema 8 and refuses `.covdb` files written by earlier versions. Record that coverage again.
+- covdbg 1.5.1 writes coverage databases with schema 9 and refuses `.covdb` files written by covdbg 1.5.0 or earlier, and covdbg 1.5.0 refuses those of 1.5.1. `open_coverage` names both versions. Record that coverage again, with the same covdbg everywhere databases are merged or opened.
 
 ### Upgrading while the server runs
 
